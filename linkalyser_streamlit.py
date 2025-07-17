@@ -6,7 +6,6 @@ import openpyxl
 from urllib.parse import urljoin
 from io import BytesIO
 import streamlit as st
-import threading
 import time
 import webbrowser
 
@@ -109,6 +108,8 @@ if 'search_finished' not in st.session_state:
     st.session_state.search_finished = False
 if 'keyword_status' not in st.session_state:
     st.session_state.keyword_status = ""
+if 'progress_log' not in st.session_state:
+    st.session_state.progress_log = []
 
 with st.form(key='search_form'):
     url = st.text_input("Enter the URL to start the search:")
@@ -125,12 +126,16 @@ if reset_clicked:
     st.session_state.search_finished = False
     st.session_state.stop_search = False
     st.session_state.keyword_status = ""
+    st.session_state.progress_log = []
     st.experimental_rerun()
 
 if stop_clicked:
     st.session_state.stop_search = True
     st.session_state.searching = False
     st.session_state.keyword_status = "Search stopped."
+
+# Place this before the search logic so it's always defined
+progress_placeholder = st.empty()
 
 if submit_clicked and url and keywords_input:
     st.session_state.results = []
@@ -139,43 +144,53 @@ if submit_clicked and url and keywords_input:
     st.session_state.search_finished = False
     st.session_state.stop_search = False
     st.session_state.keyword_status = ""
+    st.session_state.progress_log = []
     keywords = [k.strip() for k in keywords_input.split(',') if k.strip()]
 
-    def run_search():
-        html_content = fetch_html(url)
-        links = extract_links(html_content, url)
-        total_links = len(links)
-        link_contents = []
-        stats = st.session_state.stats
-        # Phase 1: Content type analysis and content extraction
-        for i, link in enumerate(links, start=1):
-            if st.session_state.stop_search:
-                st.session_state.keyword_status = "Search stopped."
-                st.session_state.searching = False
-                return
-            st.session_state.keyword_status = f"Analyzing link {i}/{total_links}..."
-            doc_content = download_and_parse(link, stats)
-            link_contents.append({'url': link, 'content': doc_content})
-            st.experimental_rerun()
-        # Phase 2: Keyword search
-        results = []
-        for i, item in enumerate(link_contents, start=1):
-            if st.session_state.stop_search:
-                st.session_state.keyword_status = "Search stopped."
-                st.session_state.searching = False
-                return
-            found_keywords = search_keywords(item['content'], keywords)
-            if found_keywords:
-                results.append({'url': item['url'], 'keywords': found_keywords})
-            st.session_state.keyword_status = f"Keyword search in progress: analyzing link {i}/{total_links}..."
-            st.experimental_rerun()
-        st.session_state.results = results
-        st.session_state.searching = False
-        st.session_state.search_finished = True
-        st.session_state.keyword_status = ""
-        st.experimental_rerun()
-
-    threading.Thread(target=run_search).start()
+    html_content = fetch_html(url)
+    links = extract_links(html_content, url)
+    total_links = len(links)
+    link_contents = []
+    stats = st.session_state.stats
+    progress_log = []
+    # Phase 1: Content type analysis and content extraction
+    for i, link in enumerate(links, start=1):
+        if st.session_state.stop_search:
+            st.session_state.keyword_status = "Search stopped."
+            st.session_state.searching = False
+            progress_log.append("Search stopped.")
+            progress_placeholder.write("\n".join(progress_log))
+            break
+        msg = f"Analyzing link {i}/{total_links}..."
+        st.session_state.keyword_status = msg
+        progress_log.append(msg)
+        progress_placeholder.write("\n".join(progress_log))
+        doc_content = download_and_parse(link, stats)
+        link_contents.append({'url': link, 'content': doc_content})
+    # Phase 2: Keyword search
+    results = []
+    for i, item in enumerate(link_contents, start=1):
+        if st.session_state.stop_search:
+            st.session_state.keyword_status = "Search stopped."
+            st.session_state.searching = False
+            progress_log.append("Search stopped.")
+            progress_placeholder.write("\n".join(progress_log))
+            break
+        msg = f"Keyword search in progress: analyzing link {i}/{total_links}..."
+        st.session_state.keyword_status = msg
+        progress_log.append(msg)
+        progress_placeholder.write("\n".join(progress_log))
+        found_keywords = search_keywords(item['content'], keywords)
+        if found_keywords:
+            results.append({'url': item['url'], 'keywords': found_keywords})
+    st.session_state.results = results
+    st.session_state.searching = False
+    st.session_state.search_finished = not st.session_state.stop_search
+    st.session_state.keyword_status = ""
+    progress_log.append("Search finished")
+    progress_placeholder.write("\n".join(progress_log))
+    st.session_state.progress_log = progress_log
+    st.experimental_rerun()
 
 # --- Display statistics ---
 st.subheader("Linkalyser Statistics:")
@@ -199,4 +214,9 @@ elif st.session_state.search_finished:
             st.markdown(f"**URL:** [{url}]({url})")
             st.write(f"Keywords: {keywords_str}")
     else:
-        st.warning("No Keyword(s) found!") 
+        st.warning("No Keyword(s) found!")
+
+# --- Progress Log ---
+st.subheader("Progress Log")
+if 'progress_log' in st.session_state and st.session_state.progress_log:
+    st.write("\n".join(st.session_state.progress_log)) 
