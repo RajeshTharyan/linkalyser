@@ -127,7 +127,7 @@ if reset_clicked:
     st.session_state.stop_search = False
     st.session_state.keyword_status = ""
     st.session_state.progress_log = []
-    st.experimental_rerun()
+    st.rerun()
 
 if stop_clicked:
     st.session_state.stop_search = True
@@ -190,7 +190,7 @@ if submit_clicked and url and keywords_input:
     progress_log.append("Search finished")
     progress_placeholder.write("\n".join(progress_log))
     st.session_state.progress_log = progress_log
-    st.experimental_rerun()
+    st.rerun()
 
 # --- Display statistics ---
 st.subheader("Linkalyser Statistics:")
