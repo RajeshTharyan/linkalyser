@@ -1,6 +1,7 @@
-streamlit
-requests
-beautifulsoup4
-PyPDF2
-python-docx
-openpyxl 
+streamlit==1.32.2
+aiohttp==3.9.3
+beautifulsoup4==4.12.3
+PyPDF2==3.0.1
+python-docx==1.1.0
+openpyxl==3.1.2
+requests==2.31.0
