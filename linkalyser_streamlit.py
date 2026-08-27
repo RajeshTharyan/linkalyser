@@ -157,6 +157,23 @@ def run_analysis(url, keywords):
 # --- Streamlit UI ---
 st.title("🔍 Linkalyser (asyncio)")
 
+st.sidebar.header("How to use")
+st.sidebar.markdown(
+    """
+Paste a web page and the words you care about. Linkalyser follows every
+link on that page, reads HTML, PDF, Word, and Excel files, and lists
+which links contain your keywords.
+
+1. **URL** — the page whose links you want to scan (not a recursive crawl).
+2. **Keywords** — comma-separated, e.g. `climate, funding, policy`.
+3. **Submit** — fetch links, then search. Watch the two progress bars.
+4. **Stop** — finish the current download, then halt.
+5. **Reset** — reload the app and start over.
+
+Images are counted but not searched. Older `.doc` / `.xls` files are skipped.
+"""
+)
+
 url = st.text_input("Enter the URL to start the search:")
 kw_input = st.text_input("Enter keywords (comma‑separated):")
 

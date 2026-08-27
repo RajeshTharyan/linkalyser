@@ -1,25 +1,56 @@
 # Linkalyser
 
-A Streamlit app that takes a starting web page, follows every link on it, and searches the linked content for your keywords.
+Linkalyser is a **Streamlit web app**. You use it in the browser: paste a page URL, type some keywords, and click Submit. It follows the links on that page, reads the linked HTML, PDFs, Word, and Excel files, and tells you which ones contain your keywords.
 
-Use it when you want a quick scan of a page’s outgoing links — HTML pages, PDFs, Word documents, and Excel spreadsheets — without opening each one by hand.
+You do not need Git, Python, or this repository to *use* the tool if someone has already started the app. Open the Streamlit page, fill in the two fields, and run it.
 
 ![Linkalyser: URL and keyword fields with Submit, Stop, and Reset](docs/images/linkalyser-ui.png)
 
-## What it does
+This GitHub repo is the **source code** for that app. It helps when you want to:
 
-1. Fetches the URL you provide and collects every `href` on that page (except `mailto:` links).
-2. Downloads each linked resource concurrently (up to 10 at a time, 30-second timeout).
-3. Extracts text from HTML, PDF, Word (`.docx`), and Excel (`.xlsx`) files.
-4. Searches that text for your keywords (case-insensitive).
-5. Shows file-type counts and a list of matching URLs, including PDF page numbers when a keyword is found.
+- understand what the app will and will not search
+- run the same app on your own machine
+- open it in GitHub Codespaces (no local Python install)
+- host your own copy on [Streamlit Community Cloud](https://share.streamlit.io)
 
-## Requirements
+## Using the app
 
-- Python 3.11 or newer (3.11 is used in the included Dev Container)
-- A network connection (the app fetches live URLs)
+The Streamlit sidebar repeats these steps.
 
-## Quick start
+1. Enter the **starting URL** (the page whose outgoing links you want to scan).
+2. Enter **keywords**, separated by commas (for example: `climate, funding, policy`).
+3. Click **Submit**.
+4. Wait through two progress bars: first the downloads, then the keyword search.
+5. Read the file-type counts and the list of matching URLs (PDF hits include page numbers).
+
+| Button | What it does |
+| ------ | ------------ |
+| Submit | Start. Both URL and keywords are required. |
+| Stop | Stop after the download that is currently finishing. |
+| Reset | Reload the app. |
+
+It only looks at links **on the starting page**. It does not crawl the rest of the site.
+
+## What it can read
+
+| Content type | What you get |
+| ------------ | ------------ |
+| HTML | Visible text on the linked page |
+| PDF | Text per page, with page numbers in the results |
+| Word (`.docx`) | Paragraph text |
+| Excel (`.xlsx`) | Cell values from every sheet |
+| Images | Counted only — no OCR |
+| Other / failed fetches | Counted as Other, not searched |
+
+Detection uses the HTTP `Content-Type` header, not the file name.
+
+**Also skipped:** `mailto:` links, JavaScript-only links, login walls, older `.doc` / `.xls` files, and sites that block automated requests.
+
+## Run your own copy
+
+Use this when you want a private instance, or you are the person hosting the Streamlit app.
+
+**Python 3.11+** and a network connection are required (the app fetches live URLs).
 
 ```bash
 git clone https://github.com/RajeshTharyan/linkalyser.git
@@ -30,48 +61,18 @@ pip install -r requirements.txt
 streamlit run linkalyser_streamlit.py
 ```
 
-The app opens in your browser at [http://localhost:8501](http://localhost:8501).
+Then open [http://localhost:8501](http://localhost:8501).
 
-### GitHub Codespaces / Dev Container
+### GitHub Codespaces
 
-This repo includes a [Dev Container](.devcontainer/devcontainer.json). Opening it in GitHub Codespaces or VS Code with the Dev Containers extension:
+This repo includes a [Dev Container](.devcontainer/devcontainer.json). Open the repo in Codespaces (or VS Code Dev Containers) and Streamlit starts on port **8501** with the preview pane forwarded.
 
-- installs dependencies from `requirements.txt`
-- starts Streamlit on port **8501**
-- forwards that port so you can use the app in the preview pane
+### Streamlit Community Cloud
 
-## How to use
+1. Point a new app at this GitHub repo and `linkalyser_streamlit.py`.
+2. `runtime.txt` and `requirements.txt` are picked up automatically.
 
-1. Enter the **starting URL** (the page whose links you want to analyse).
-2. Enter **keywords**, separated by commas (for example: `climate, funding, policy`).
-3. Click **Submit**.
-4. Watch the two progress bars:
-   - first pass: download and parse each link
-   - second pass: keyword search
-5. Review the statistics and the matching URLs.
-
-Buttons:
-
-| Button   | Action |
-| -------- | ------ |
-| Submit   | Start analysis. Both URL and keywords are required. |
-| Stop     | Request that the current run stop after the next finished fetch. |
-| Reset    | Clear the stop flag and reload the app. |
-
-## Supported content types
-
-| Content type | How it is handled |
-| ------------ | ----------------- |
-| HTML (`text/html`) | Visible text is extracted with BeautifulSoup. |
-| PDF (`application/pdf`) | Text is extracted per page with PyPDF2. Matches include page numbers. |
-| Word (`application/vnd.openxmlformats-officedocument.wordprocessingml.document`) | Paragraph text from `.docx` files. |
-| Excel (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`) | Cell values from every worksheet in `.xlsx` files. |
-| Images | Counted in statistics; not searched (no OCR). |
-| Other / failed fetches | Counted as Other or skipped; no text search. |
-
-Content-type detection uses the HTTP `Content-Type` header, not the file extension.
-
-## How it works
+## How a search works
 
 ```
 Start URL
@@ -94,37 +95,16 @@ Case-insensitive keyword search
 Streamlit report: counts + matching URLs
 ```
 
-Keyword search on PDFs is page-aware: extracted pages are split on form-feed (`\f`), so results can show which page a keyword appeared on.
-
-## Limitations
-
-- Only links on the **starting page** are followed. There is no recursive crawl of deeper pages.
-- Relative links are resolved against the starting URL; JavaScript-rendered or pagination-loaded links are not collected.
-- Sites that block scrapers, require login, or rate-limit requests may return empty results.
-- Older `.doc` / `.xls` files are not parsed (only `.docx` and `.xlsx`).
-- Images and unknown types are not searched.
-- The Stop button sets a flag checked between fetches; work already in flight may still finish.
-
-Respect site terms of use and `robots.txt` when you point this tool at other people’s pages. See [SECURITY.md](SECURITY.md).
-
 ## Project layout
 
 ```
 linkalyser/
-├── linkalyser_streamlit.py   # Streamlit UI and analysis logic
-├── requirements.txt          # Python dependencies (pinned)
+├── linkalyser_streamlit.py   # The Streamlit app (this is what people run)
+├── requirements.txt          # Python packages for that app
 ├── runtime.txt               # Python version for Streamlit Community Cloud
-├── docs/images/              # README screenshots
-├── .devcontainer/            # Codespaces / VS Code Dev Container
-└── README.md
+├── docs/images/              # README screenshot
+└── .devcontainer/            # Codespaces: install deps and start Streamlit
 ```
-
-## Deploy on Streamlit Community Cloud
-
-1. Fork or push this repository to GitHub.
-2. Go to [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub.
-3. Create a new app pointing at `linkalyser_streamlit.py`.
-4. `runtime.txt` and `requirements.txt` are picked up automatically.
 
 ## License
 
