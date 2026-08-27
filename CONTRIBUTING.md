@@ -1,8 +1,6 @@
 # Contributing to Linkalyser
 
-Thanks for taking an interest in the project. Small, focused changes are welcome.
-
-## Run locally
+## Run the app
 
 ```bash
 python3 -m venv .venv
@@ -11,31 +9,31 @@ pip install -r requirements.txt
 streamlit run linkalyser_streamlit.py
 ```
 
-Python 3.11+ is recommended. Keep dependency versions in `requirements.txt` unless you have a reason to bump them.
+Python 3.11+ is recommended.
 
-## What to change
+## Tests
 
-Most behaviour lives in `linkalyser_streamlit.py`:
+```bash
+pip install -r requirements-dev.txt
+pytest -q
+```
 
-- `parse_*` functions extract text from each file type
-- `fetch_and_parse` routes by HTTP `Content-Type`
-- `run_analysis` drives the Streamlit UI flow
-- `analyse_links_async` / `keyword_search_async` handle the two analysis phases
+GitHub Actions runs the same tests on each push and pull request.
 
-If you add a file type, update both the parser and the statistics keys, and mention it in the README.
+## Layout
+
+| Path | Role |
+| ---- | ---- |
+| `linkalyser_streamlit.py` | Streamlit UI only |
+| `linkalyser/analysis.py` | Orchestrates a run |
+| `linkalyser/links.py` | Collect `<a href>` targets |
+| `linkalyser/fetch.py` | Concurrent download and Content-Type routing |
+| `linkalyser/parsers.py` | PDF / Word / Excel / HTML text |
+| `linkalyser/search.py` | Keyword hits and PDF page numbers |
+| `tests/` | Pytest |
+
+If you add a file type, update the parser, the stats keys in `fetch.py`, a test, and the README.
 
 ## Pull requests
 
-1. Open an issue first if the change is large or changes user-facing behaviour.
-2. Keep the app runnable with `streamlit run linkalyser_streamlit.py`.
-3. Update `README.md` when you change how people use the tool.
-4. Do not commit virtual environments, `__pycache__`, or `.streamlit/secrets.toml`.
-
-## Reporting bugs
-
-Include:
-
-- The starting URL (or a reduced example)
-- The keywords you used
-- What you expected vs what happened
-- Python and Streamlit versions (`streamlit --version`)
+Keep `streamlit run linkalyser_streamlit.py` working. Do not commit `.venv`, `__pycache__`, or `.streamlit/secrets.toml`.
