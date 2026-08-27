@@ -4,6 +4,8 @@ A Streamlit app that takes a starting web page, follows every link on it, and se
 
 Use it when you want a quick scan of a page’s outgoing links — HTML pages, PDFs, Word documents, and Excel spreadsheets — without opening each one by hand.
 
+![Linkalyser: URL and keyword fields with Submit, Stop, and Reset](docs/images/linkalyser-ui.png)
+
 ## What it does
 
 1. Fetches the URL you provide and collects every `href` on that page (except `mailto:` links).
@@ -112,6 +114,7 @@ linkalyser/
 ├── linkalyser_streamlit.py   # Streamlit UI and analysis logic
 ├── requirements.txt          # Python dependencies (pinned)
 ├── runtime.txt               # Python version for Streamlit Community Cloud
+├── docs/images/              # README screenshots
 ├── .devcontainer/            # Codespaces / VS Code Dev Container
 └── README.md
 ```
